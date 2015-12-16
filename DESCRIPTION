@@ -1,0 +1,11 @@
+Package: seqAlign
+Type: Package
+Title: sequence alignment
+Version: 1.0
+Date: 2015-11-30
+Author: Yu Gu
+Maintainer: Yu Gu <yu_gu@urmc.rochester.edu>
+Depends: R (>= 2.10)
+Imports: msa,Biostrings,seqinr,biomaRt,tcltk,RUnit
+Description: Functions in this package implement multiple sequences alignment, such as ClustalW, ClustalOmega and Muschle, and also pairwise sequence alignbment, such as Needleman-Wuntch algorithm and Smith-waterman algorithm.
+License: GPL-3

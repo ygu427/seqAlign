@@ -1,0 +1,137 @@
+---
+title: "Vignette"
+author: "Yu Gu"
+date: "Wednesday, December 02, 2015"
+output: html_document
+---
+
+### Introduction
+This package implemnet algorithms used for pairwise sequence alignment, including Needleman-Wunsch algorithm to produce global sequence alignment and Smith-Waterman algorithm to prodece local alignment. It also review some existing algorithms used for multiple sequence alignment, such as ClustalW, ClustalOmega, and Muscle, comparing their performances based on runnting time and accuracy. This package also include function to generate DNA/RNA and protein sequences.
+
+### Mehtod
+
+#### Needleman-Wunsch Algorithm
+* Introduce gap penalty: the top row and left column are filled with $i \times d, i=1,...m$ and $j \times d, j=1,...,n$, where $m$ and $n$ are the length of two sequences respectively.
+* $F(0,0)=0$ is the start position, and $F(n,m)$ is the start position of tracking back.
+* For each cell, do the following calculation to get the score value, where $S(X_i,Y_i)$ is the pair-score  obtained from score matrix,
+\[
+    F(i,j) = \mbox{max}\begin{cases}
+                  F(i-1,j-1) + S(X_i,Y_i)\\
+                  F(i-1,j) - d\\
+                  F(i,j-1) - d
+                \end{cases}
+ \]
+* Track back from the right-bottom position and end with $F(0,0)$ to find the best path.
+
+#### Smith-Waterman Algorithm
+* Begin with filling zeros in the top row and left column.
+* For each cell, do the following calculation to get the score value
+\[
+    F(i,j) = \mbox{max}\begin{cases}
+                  0\\
+                  F(i-1,j-1) + S(X_i,Y_i)\\
+                  F(i-1,j) - d\\
+                  F(i,j-1) - d
+                \end{cases}
+ \]
+* Once $F(i,j)<0$, assign zero to that cell, which allows us to restart alignment at this position
+* Find the cell with highest score value and track back from this position until the first time touch the cell with score of zero to find the optimal path
+
+#### Clustal W program
+The "W" in the name stands for "weighting", which indicates assigning different weights to sequences and parameters at different positions in alignment.  
+Basic multiple alignment consists of three main stages:  
+
+* Calculate all pairwise sequence similarity to construct a distance matrix, giving the divergence of each of sequences via full dynamic programming
+* Construct a guide tree from the distance matrix via neighbor-joining algorithm and derives sequence weights
+* Do progressive alignment according to the branching order in the guide tree  
+
+Highlights:  
+
+* Apply neighbor-joining method for making initial guide tree, which provides more reliable tree topology and gives better estimates of tree branch length that used to weight  sequences and adjust the alignment parameters dynamically
+* Assign individual weights to each sequence in a partial alignment to down-weight near-duplicate sequences and up-weight the most divergent ones
+* Do dynamic calculation of sequence- and position-specific gap penalties as the alignment proceeds
+
+#### MUSCLE program
+* Stage 1: calculate k-mer distance matrix through k-mer counting and then construct a rooted guide tree via UPGMA  algorithm, and  finally, do progressive alignment to obtain the first MSA
+* Stage 2: compute Kimura distance matrix and re-estimating the guide tree via  UPGMA allgorithm, and do progressive alignment to produce second MSA. Compare the guide tree from stage 1 and 2, identifying a set of nodes for which the branching order is different. Build new MSA if the order has changed, or keep the first MSA
+* Stage 3: delete an edge of the guide tree from stage 2, which divides the tree into two sub-trees and calculate the profile of multiple alignment for each sub-tree. Re-align the profiles from the two sub-tree to produce a new MSA. Keep the new MSA only if the new sum-of-pairs score is improved. Iterate this process until convergence or hitting the user-defined limit.  
+
+Two distinguish features:  
+
+* Uing both the k-mer distance for an unaligned pair and the Kimura distance for an aligned pair to calculate all pairwise sequence distance
+* At the completion of any stage of the algorithm, a MSA is available and the algorithm can be terminated
+
+#### Clustal Omega
+* Completely rewritten and revised version of Clustal series of programs for MSA
+* Retains the basic progressive alignment where the order of alignment is determined by a guide-tree
+* Apply the mBed algorithm {\tiny \cite{blackshields2010research}} for calculating guide trees, which allows it can deal with very large numbers of DNA/RNA or protein sequences
+* Apply the HHalign method for aligning profile hidden Markov models, which considerably improves the accuracy  
+
+Highlights:  
+
+* mBed algorithm: It calculates the pairwise distance of all N sequences with respect to $log N$ randomly chosen seed sequences only, which reduces the time and memory complexity for guide tree calculation from $O(N^2)$ to $O(N log N))$
+* HHalign method: HHalign is entirely based on Hidden-Markov Models(HMMs). Sequences and intermediary profiles are converted into HMMs, which are aligned in turn. There are two HMM alignment algorithm: Maximum Accuracy (MAC) algorithm and Viterbi algorithm. MAC is the default.
+
+### Implementation
+
+#### Implement Pairwise Sequence Alignment
+This package includes a wrap as the common user-interface to both the Needle-Wunsch and Smith-Waterman algorithm. User can determine which algorithm or both of the two algorithm would be used. An user-derfined parameter input window would pop-up, where the input data could be FASTA file or GeneBank identities or two sequences. User can determine the substitution matrix and gap penalties.  
+Example here will only show how to use the two functions for Needleman-Wunsch and Smith-Waterman algorithm
+```{r,echo=FALSE,results='hide'}
+setwd("C:/Users/ygu/Documents/GitHub/seqAlign/R")
+seq1 <- "HEAGAWGHEE"
+seq2 <- "HAWHEAE"
+source("NWalgorithm.R")
+source("SWalgorithm.R")
+library("Biostrings")
+data("PAM120")
+data("BLOSUM50")
+subMatrix <- PAM120
+NW.align <- NWalgorithm(seq1,seq2,subMatrix,gapOpening = 8, gapExtension = 1)
+subMatrix <- BLOSUM50
+SW.align <- SWalgorithm(seq1,seq2,subMatrix,gapOpening = 10, gapExtension = 0.2)
+```
+
+The two input sequences are
+```{r}
+seq1
+seq2
+```
+
+The aligned paths are
+```{r}
+NW.align$path
+SW.align$path
+```
+
+The F matrices that used to construct the optimal path are
+```{r}
+NW.align$fMatrix
+SW.align$fMatrix
+```
+
+The function for multiple sequence alignment applies 'msa' package. The input paramenters include the sequences and which methods would be used. Also, user can define the working directory and output file name.
+
+```{r,echo=FALSE}
+setwd("C:/Users/ygu/Documents/GitHub/seqAlign/R")
+source("msaAlign.R")
+library('msa')
+seq <- readAAStringSet('C:/Users/ygu/Documents/GitHub/seqAlign/data/simSeq.txt')
+clustalw.align <- msaAlign(seq,method="ClustalW")
+
+clustalo.align <- msaAlign(seq,method="ClustalOmega")
+
+muscle.align <- msaAlign(seq,method="Muscle")
+```
+
+The generated sequences data is
+```{r}
+seq
+```
+
+The alignment results are
+```{r}
+print(clustalw.align,show="complete")
+print(clustalo.align,show="complete")
+print(muscle.align,show="complete")
+```

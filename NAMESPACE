@@ -1,0 +1,6 @@
+importFrom(msa,msa,msaPrettyPrint)
+import(Biostrings,tcltk)
+importFrom(seqinr,write.fasta,read.fasta)
+importFrom(biomaRt,useMart,getSequence)
+importFrom(RUnit,defineTestSuite,runTestSuite)
+exportMethods("msaAlign","NWalgorithm","SWalgorithm","pairAlign")
