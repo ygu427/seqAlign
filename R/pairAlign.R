@@ -59,21 +59,8 @@ pairAlign <- function(method=c("SW","NW","both"),dir="",out.file=""){
   gapExtension <- input$extensionPenalty
   substitutionMatrix <- input$subMatrix
   
-  data(substitutionMatrix)
-  if (substitutionMatrix=="BLOSUM62") {
-    subMatrix <- BLOSUM62
-  } else if (substitutionMatrix=="BLOSUM50") {
-    subMatrix <- BLOSUM50
-  } else if (substitutionMatrix=="PAM250") {
-    subMatrix <- PAM250
-  } else if (substitutionMatrix=="BLOSUM45") {
-    subMatrix <- BLOSUM45
-  } else if (substitutionMatrix=="BLOSUM80") {
-    subMatrix <- BLOSUM80
-  } else if (substitutionMatrix=="PAM120") {
-    subMatrix <- PAM120
-  }
-  
+  data(substitutionMatrix,,package="Biostrings",envir = environment())
+  subMatrix <- get(substitutionMatrix,envir = environment())
   align <- list()
   
   if (method=="SW"){
